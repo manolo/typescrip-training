@@ -19,10 +19,8 @@ async function fetchWithRtry(url: string, ms = 500): Promise<Response> {
     return fetch(url).catch(error => new Promise((resolve) => setTimeout(() => resolve(fetchWithRtry(url, ms)), ms)));
 }
 
-const tpl: HTMLTemplateElement = document.createElement('template');
 function parseAva(payload: string): string {
-  tpl.innerHTML = payload;
-  return tpl.content.querySelector('instockvalue')?.textContent || '';
+  return new DOMParser().parseFromString(payload, 'application/xml').querySelector('INSTOCKVALUE')?.textContent || '';
 }
 
 async function fetchManufacturer(manufacturer: string) : Promise<any> {
