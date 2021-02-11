@@ -1,4 +1,5 @@
 import * as t from 'io-ts';
+import * as v from './my-own-validation';
 import * as Either from "fp-ts/lib/Either"
 import {PathReporter} from 'io-ts/PathReporter'
 
@@ -10,37 +11,32 @@ const table = document.createElement('table');
 const body = table.createTBody();
 document.body.appendChild(table);
 
-const AvailabilityCodec = t.type({
-  id: t.string,
-  DATAPAYLOAD: t.string
-}, "Availability")
-type Availability = t.TypeOf<typeof AvailabilityCodec>
+const AvailabilityCodec = v.object({
+  id: v.string,
+  DATAPAYLOAD: v.string
+})
+type Availability = ReturnType<typeof AvailabilityCodec>
 
-const AvailabilityResponseCodec = t.type({
-  response: t.array(AvailabilityCodec)
-}, "Availability")
-type AvailabilityResponse = t.TypeOf<typeof AvailabilityResponseCodec>
+const AvailabilityResponseCodec = v.object({
+  response: v.array(AvailabilityCodec)
+})
+type AvailabilityResponse = ReturnType<typeof AvailabilityResponseCodec>
 
-const ProductCodec = t.type({
-  id: t.string,
-  name: t.string,
-  type: t.string,
-  manufacturer: t.string,
-  price: t.number
-}, "Product");
-type Product = t.TypeOf<typeof ProductCodec>
+const ProductCodec = v.object({
+  id: v.string,
+  name: v.string,
+  type: v.string,
+  manufacturer: v.string,
+  price: v.number
+});
+type Product = ReturnType<typeof ProductCodec>
 
 async function fetchWithRtry(url: string, ms = 500): Promise<Response> {
     return fetch(url).catch(error => new Promise((resolve) => setTimeout(() => resolve(fetchWithRtry(url, ms)), ms)));
 }
 
-async function fetchJSON<T>(url: string, codec: t.Type<T>): Promise<T> {
-  const result = codec.decode(await (await fetchWithRtry(url)).json());
-  if (Either.isRight(result)) {
-      return result.right
-  } else {
-      throw Error(PathReporter.report(result).join("\n"))
-  }
+async function fetchJSON<T>(url: string, validator: v.Validator<T>): Promise<T> {
+  return validator(await (await fetchWithRtry(url)).json());
 }
 
 function parseAva(payload: string): string {
@@ -58,7 +54,7 @@ async function fetchManufacturer(manufacturer: string) : Promise<any> {
 }
 
 async function fetchProduct(product: string): Promise<Product[]> {
-  const prods = await fetchJSON(`${url}/products/${product}`, t.array(ProductCodec));
+  const prods = await fetchJSON(`${url}/products/${product}`, v.array(ProductCodec));
 
   if (!fields) { // create table headers
     fields = [...Object.keys(prods[0]), 'availability'];
