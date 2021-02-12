@@ -11,9 +11,13 @@ const table = document.createElement('table');
 const body = table.createTBody();
 document.body.appendChild(table);
 
+function DATAPAYLOAD(payload: any) {
+  return new DOMParser().parseFromString(payload, 'application/xml').querySelector('INSTOCKVALUE')?.textContent || '';
+}
+
 const AvailabilityCodec = v.object({
   id: v.string,
-  DATAPAYLOAD: v.string
+  DATAPAYLOAD: DATAPAYLOAD
 })
 type Availability = ReturnType<typeof AvailabilityCodec>
 
@@ -39,16 +43,12 @@ async function fetchJSON<T>(url: string, validator: v.Validator<T>): Promise<T> 
   return validator(await (await fetchWithRtry(url)).json());
 }
 
-function parseAva(payload: string): string {
-  return new DOMParser().parseFromString(payload, 'application/xml').querySelector('INSTOCKVALUE')?.textContent || '';
-}
-
 async function fetchManufacturer(manufacturer: string) : Promise<any> {
   const avas = await (await fetchJSON(`${url}/availability/${manufacturer}`, AvailabilityResponseCodec)).response
   avas.filter(a => a.id).forEach(a => {
     const row = document.getElementById(a.id.toLowerCase()) as HTMLTableRowElement;
     if (row && row.lastElementChild) { // set availability text
-      row.lastElementChild.textContent = parseAva(a.DATAPAYLOAD);
+      row.lastElementChild.textContent = a.DATAPAYLOAD;
     }
   });
 }

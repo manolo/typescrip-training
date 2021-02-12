@@ -37,7 +37,7 @@ type Intersection<A, B> = A extends object
         : A & B
     : A & B
 
-export function intersection<A, B>(a: Validator<A>, b: Validator<B>): Validator<Intersection<A, B>>;    
+export function intersection<A, B>(a: Validator<A>, b: Validator<B>): Validator<Intersection<A, B>>;
 export function intersection<A, B, C>(a: Validator<A>, b: Validator<B>, c: Validator<C>): Validator<Intersection<A, Intersection<B, C>>>;
 export function intersection(...validators: Validator<any>[]): Validator<any> {
     return (input: any) => {
@@ -54,8 +54,8 @@ export function object<T>(spec: ObjectSpec<T>): Validator<T> {
     return (input: any) => {
         if (typeof input !== "object") throw Error("Not an object: " + input)
         Object.entries(spec).forEach(([key, validator]) => {
-            (validator as Validator<any>)(input[key])    
+            input[key] = (validator as Validator<any>)(input[key])
         })
         return input as T
-    }    
+    }
 }
